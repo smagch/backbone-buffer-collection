@@ -5,8 +5,9 @@
   "main": "backbone.buffer-collection.js",
   "devDependencies": {
     "express": "~3.0.3",
-    "mocha": "*",
-    "jshint": "*",
-    "expect.js": "*"
+    "mocha": "~1.7",
+    "jshint": "~0.9",
+    "expect.js": "~0.2",
+    "underscore": "~1.4"
   }
 }
