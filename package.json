@@ -1,0 +1,12 @@
+{
+  "name": "backbone-buffer-collection",
+  "version": "0.0.0",
+  "description": "Backbone.js plugin which support automatic buffer loading and removing",
+  "main": "backbone.buffer-collection.js",
+  "devDependencies": {
+    "express": "~3.0.3",
+    "mocha": "*",
+    "jshint": "*",
+    "expect.js": "*"
+  }
+}
