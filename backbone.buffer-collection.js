@@ -1,3 +1,9 @@
+/*!
+ * (c) 2012 Tomoya Shimaguchi <smagch@gmail.com>
+ * License MIT
+ * https://github.com/smagch/backbone-buffer-collection
+ */
+
 (function (global) {
   'use strict';
 
@@ -85,14 +91,17 @@
         return Collection.prototype.add.call(this, models, options);
       }
       delete this._pending[pos];
-      // balk if it's aborted request
+      // don't add models if it's aborted position
       if (this._abort[pos]) {
         delete this._abort[pos];
-        return this;
+      } else {
+        Collection.prototype.add.call(this, models, options);
+        var after = _.keys(this._byCid);
+        this._byPosition[pos] = _.difference(after, before);
       }
-      Collection.prototype.add.call(this, models, options);
-      var after = _.keys(this._byCid);
-      this._byPosition[pos] = _.difference(after, before);
+      if (!_.keys(this._pending).length) {
+        this.trigger('drain', _.keys(this._byPosition));
+      }
       return this;
     },
 
@@ -106,7 +115,7 @@
       var cached, loaded, neighbor, toLoad, toUnload, toAbort;
       cached = _.keys(this._byPosition);
       loaded = cached.concat(this._pending);
-      neighbor = this.getNeighbor();
+      neighbor = this.getNeighbors();
       toLoad = _.difference(neighbor, loaded);
       toUnload = _.difference(cached, neighbor);
       toAbort = _.difference(this._pending, neighbor);
@@ -129,15 +138,9 @@
       var pending = this._pending;
       if (pending[position]) return this;
       options = options || {};
-      if (options.position === undefined) {
-        options.position = position;
-      }
-      if (options.add === undefined) {
-        options.add = true;
-      }
-      if (options.url === undefined) {
-        options.url = this.url(position);
-      }
+      if (options.position === undefined) options.position = position;
+      if (options.add === undefined) options.add = true;
+      if (options.url === undefined) options.url = this.url(position);
       pending[position] = 1;
       var xhr = Collection.prototype.fetch.call(this, options);
       return xhr.fail(function () {
@@ -153,7 +156,21 @@
     unload: function (position) {
       var cids = this._byPosition[position];
       if (cids) this.remove(cids);
+      delete this._byPosition[position];
       return this;
+    },
+
+    /**
+     * return Array of models by position
+     *
+     * @param {Number}
+     * @return {Array}
+     */
+
+    getByPosition: function (position) {
+      var cids = this._byPosition[position];
+      if (!cids) return null;
+      return this.map(cids, this.getByCid, this);
     },
 
     /**
@@ -170,7 +187,7 @@
      * @api private
      */
 
-    getNeighbor: function () {
+    getNeighbors: function () {
       var pos = this._pos,
         neighbors = [];
 
@@ -178,7 +195,6 @@
         if (pos - i >= this.min) neighbors.push(pos - i);
         if (pos + i <= this.max) neighbors.push(pos + i);
       }
-      console.dir( neighbors );
       return neighbors;
     }
   });
