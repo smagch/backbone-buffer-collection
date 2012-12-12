@@ -27,6 +27,18 @@
 
   /**
    * BufferCollection constructor
+   * mixin "buffer", "min", "max" properties
+   * Example:
+   *   var MyBufferCollection = Backbone.BufferCollection.extend({
+   *     buffer: 4,
+   *     url: function (pos) { return '/a_book?page=' + pos; }
+   *   });
+   *   var myCollection = new MyBufferCollection();
+   *   console.log(myCollection.buffer); // => 4
+   *   var yetAnotherCollection = new MyBufferCollection({
+   *     buffer: 10
+   *   });
+   *   console.log(myCollection.buffer); // => 10
    */
 
   var BufferCollection = Backbone.BufferCollection = function (models, options) {
@@ -41,7 +53,13 @@
   };
 
   /**
-   * expose defaults
+   * current version of the plugin
+   */
+
+  BufferCollection.version = '0.0.0-alpha';
+
+  /**
+   * expose defaults to allow override
    */
 
   BufferCollection.defaults = defaults;
@@ -62,18 +80,20 @@
      * override `_reset` to add internal expandos
      *   "_byPosition" map by position. hold Array of cid.
      *   "_pending" map of requesting positions
-     *   "_abort" aborted request
      *   "_pos" current position
      */
 
     _reset: function (options) {
+      // TODO: don't use position number to store `_abort`, `_pending`?
+      // if it's data source changes, there will be a problem.
       Collection.prototype._reset.call(this, options);
       if (this._byPosition) {
         var cached = _.keys(this._byPosition);
         _.each(cached, this.unload, this);
       }
       this._byPosition = {};
-      this._abort = this._pending || {};
+      // TODO: should abort requests of previous collection source
+      // this._abort = _.extend((this._abort || {}), (this._pending || {}));
       this._pending = {};
       this._pos = this._pos || null;
       return this;
@@ -85,18 +105,17 @@
      */
 
     add: function (models, options) {
-      var before = _.keys(this._byCid);
-      var pos = options && options.position;
+      var before, pos, after;
+      pos = options && options.position;
       if (pos === undefined) {
         return Collection.prototype.add.call(this, models, options);
       }
       delete this._pending[pos];
-      // don't add models if it's aborted position
-      if (this._abort[pos]) {
-        delete this._abort[pos];
-      } else {
+      // don't add models if requested position is no longer a neighbor
+      if (this.isNeighbor(pos)) {
+        before = _.keys(this._byCid);
         Collection.prototype.add.call(this, models, options);
-        var after = _.keys(this._byCid);
+        after = _.keys(this._byCid);
         this._byPosition[pos] = _.difference(after, before);
       }
       if (!_.keys(this._pending).length) {
@@ -106,57 +125,77 @@
     },
 
     /**
+     * Fetch data by position
+     *   - It automatically remove models that is outside of buffer range
+     *   - It automatically load models inside of buffer range if it doesn't exist
+     * When you want to reset collection.
+     * You'll need to call `.reset()` explicitely since `options.add` is `true` by default
+     * When you specify `options.add` to be `false`, it reset
+     *
+     * @param {Number}
+     * @param {Object}
      * @return {BufferCollection}
      */
 
     position: function (position, options) {
       if (this._pos === position) return;
+      var cached, loaded, neighbor, toLoad, toUnload;
       this._pos = position;
-      var cached, loaded, neighbor, toLoad, toUnload, toAbort;
+      options || (options = {});
       cached = _.keys(this._byPosition);
       loaded = cached.concat(this._pending);
       neighbor = this.getNeighbors();
       toLoad = _.difference(neighbor, loaded);
       toUnload = _.difference(cached, neighbor);
-      toAbort = _.difference(this._pending, neighbor);
-      if (_.indexOf(loaded, position) === -1) {
-        this.load(position);
-      }
+      if (options && options.add === false) this.reset();
+      if (_.indexOf(loaded, position) === -1) this.load(position, options);
       _.each(toUnload, this.unload, this);
-      _.union(this._abort, toAbort);
       _.each(toLoad, function (pos) {
-        this.load(pos, options);
+        this.load(pos);
       }, this);
       return this;
     },
 
     /**
+     * Request data by position
+     * You'll need to override `url` property something like this
+     *   url: function (position) {
+     *     return '/slide?page=' + position;
+     *   }
+     *   url: function (position) {
+     *     return '/book/' + this.bookName + '?page=' + position;
+     *   }
+     *
+     * @param {Number}
+     * @param {Object}
      * @return {XHR}
      */
 
     load: function (position, options) {
       var pending = this._pending;
       if (pending[position]) return this;
-      options = options || {};
-      if (options.position === undefined) options.position = position;
-      if (options.add === undefined) options.add = true;
-      if (options.url === undefined) options.url = this.url(position);
       pending[position] = 1;
-      var xhr = Collection.prototype.fetch.call(this, options);
-      return xhr.fail(function () {
+      options || (options = {});
+      options.position = position;
+      options.url = this.url(position);
+      if (options.add === undefined) options.add = true;
+      return Collection.prototype.fetch.call(this, options).fail(function () {
         // TODO add retry option??
         delete pending[position];
       });
     },
 
     /**
+     * @param {Number}
      * @return {BufferCollection}
      */
 
     unload: function (position) {
       var cids = this._byPosition[position];
-      if (cids) this.remove(cids);
-      delete this._byPosition[position];
+      if (cids) {
+        this.remove(cids);
+        delete this._byPosition[position];
+      }
       return this;
     },
 
@@ -183,19 +222,30 @@
     },
 
     /**
+     * return list of positions which is inside buffer areas
      * @return {Array} - list of adjacent positions
-     * @api private
      */
 
     getNeighbors: function () {
-      var pos = this._pos,
-        neighbors = [];
-
+      var pos = this._pos, neighbors = [];
       for (var i = 1; i <= this.buffer; i++) {
         if (pos - i >= this.min) neighbors.push(pos - i);
         if (pos + i <= this.max) neighbors.push(pos + i);
       }
       return neighbors;
+    },
+
+    /**
+     * unique id of position
+     * @param {Number}
+     * @api private
+     */
+
+    isNeighbor: function (position) {
+      var pos = this.position;
+      var min = Math.min(this.min, pos - this.buffer);
+      var max = Math.min(this.max, pos + this.buffer);
+      return !(position < min || position > max);
     }
   });
 
