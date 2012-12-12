@@ -84,4 +84,17 @@ describe('Backbone.StreamCollection', function () {
       colorList.position(tests[0].position);
     });
   });
+
+  describe('changing data source', function () {
+    it('should remove all buffers when `.reset();` called', function (done) {
+      var colorList = new ColorCollection(null, { buffer: 2 });
+      colorList.position(0);
+      colorList.reset();
+      colorList.position(1);
+      colorList.on('drain', function (positions) {
+        expect(positions).to.have.length(4);
+        done();
+      });
+    });
+  });
 });
