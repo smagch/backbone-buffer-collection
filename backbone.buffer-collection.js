@@ -153,6 +153,7 @@
       _.each(toLoad, function (pos) {
         this.load(pos);
       }, this);
+      this.trigger('position', position, options);
       return this;
     },
 
