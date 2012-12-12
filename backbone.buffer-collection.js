@@ -132,7 +132,7 @@
      * You'll need to call `.reset()` explicitely since `options.add` is `true` by default
      * When you specify `options.add` to be `false`, it reset
      *
-     * @param {Number}
+     * @param {Number|String}
      * @param {Object}
      * @return {BufferCollection}
      */
@@ -140,7 +140,7 @@
     position: function (position, options) {
       if (this._pos === position) return this;
       var cached, loaded, neighbor, toLoad, toUnload;
-      this._pos = position;
+      this._pos = parseInt(position, 10);
       options || (options = {});
       cached = _.keys(this._byPosition);
       loaded = cached.concat(_.keys(this._pending));
