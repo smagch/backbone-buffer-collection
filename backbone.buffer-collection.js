@@ -242,7 +242,7 @@
      */
 
     isNeighbor: function (position) {
-      var pos = this.position;
+      var pos = this._pos;
       var min = Math.min(this.min, pos - this.buffer);
       var max = Math.min(this.max, pos + this.buffer);
       return !(position < min || position > max);
