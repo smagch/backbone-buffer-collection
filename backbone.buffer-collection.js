@@ -138,17 +138,17 @@
      */
 
     position: function (position, options) {
-      if (this._pos === position) return;
+      if (this._pos === position) return this;
       var cached, loaded, neighbor, toLoad, toUnload;
       this._pos = position;
       options || (options = {});
       cached = _.keys(this._byPosition);
-      loaded = cached.concat(this._pending);
+      loaded = cached.concat(_.keys(this._pending));
       neighbor = this.getNeighbors();
       toLoad = _.difference(neighbor, loaded);
-      toUnload = _.difference(cached, neighbor);
+      toUnload = _.difference(cached, neighbor, [position + '']);
       if (options && options.add === false) this.reset();
-      if (_.indexOf(loaded, position) === -1) this.load(position, options);
+      if (_.indexOf(loaded, position + '') === -1) this.load(position, options);
       _.each(toUnload, this.unload, this);
       _.each(toLoad, function (pos) {
         this.load(pos);
@@ -223,14 +223,14 @@
 
     /**
      * return list of positions which is inside buffer areas
-     * @return {Array} - list of adjacent positions
+     * @return {Array} - list of adjacent positions, position is String typed
      */
 
     getNeighbors: function () {
       var pos = this._pos, neighbors = [];
       for (var i = 1; i <= this.buffer; i++) {
-        if (pos - i >= this.min) neighbors.push(pos - i);
-        if (pos + i <= this.max) neighbors.push(pos + i);
+        if (pos - i >= this.min) neighbors.push(pos - i + '');
+        if (pos + i <= this.max) neighbors.push(pos + i + '');
       }
       return neighbors;
     },
