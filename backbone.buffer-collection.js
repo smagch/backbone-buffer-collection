@@ -142,12 +142,13 @@
       var cached, loaded, neighbor, toLoad, toUnload;
       this._pos = parseInt(position, 10);
       options || (options = {});
+      // force add true
+      options.add = true;
       cached = _.keys(this._byPosition);
       loaded = cached.concat(_.keys(this._pending));
       neighbor = this.getNeighbors();
       toLoad = _.difference(neighbor, loaded);
       toUnload = _.difference(cached, neighbor, [position + '']);
-      if (options && options.add === false) this.reset();
       if (_.indexOf(loaded, position + '') === -1) this.load(position, options);
       _.each(toUnload, this.unload, this);
       _.each(toLoad, function (pos) {
