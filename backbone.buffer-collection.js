@@ -221,7 +221,7 @@
     getByPosition: function (position) {
       var cids = this._byPosition[position];
       if (!cids) return null;
-      return this.map(cids, this.getByCid, this);
+      return _.map(cids, this.getByCid, this);
     },
 
     /**
