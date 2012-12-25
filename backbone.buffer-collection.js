@@ -207,6 +207,7 @@
     unload: function (position) {
       var cids = this._byPosition[position];
       if (cids) {
+        this.trigger('unload', this.getByPosition(position));
         this.remove(cids);
         delete this._byPosition[position];
       }
