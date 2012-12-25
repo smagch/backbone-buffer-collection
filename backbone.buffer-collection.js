@@ -125,6 +125,16 @@
     },
 
     /**
+     * prohibit fetch
+     * since this plugin is designed to request by position
+     * using fetch directly may cause bugs
+     */
+
+    fetch: function () {
+      throw new Error("Don't use fetch, use position instead");
+    },
+
+    /**
      * Fetch data by position
      *   - It automatically remove models that is outside of buffer range
      *   - It automatically load models inside of buffer range if it doesn't exist
