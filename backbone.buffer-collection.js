@@ -121,6 +121,8 @@
       if (!_.keys(this._pending).length) {
         this.trigger('drain', _.keys(this._byPosition));
       }
+
+      this.trigger('concat', this.getByPosition(pos), options);
       return this;
     },
 
