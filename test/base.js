@@ -71,7 +71,8 @@ describe('Backbone.BufferCollection', function () {
         answer: 4
       });
 
-      colorList.on('drain', function (positions) {
+      colorList.on('drain', function () {
+        var positions = colorList.loaded();
         var props = tests.shift();
         checkLength(props.answer, positions);
         if (tests.length) {

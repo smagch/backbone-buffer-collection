@@ -230,8 +230,12 @@
     },
 
     /**
+     * return cached positions
+     * @return {Array} list of position
      */
 
+    loaded: function () {
+      return _.keys(this._byPosition);
     },
 
     /**
