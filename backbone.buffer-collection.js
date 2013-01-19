@@ -137,6 +137,7 @@
     },
 
     /**
+     * Setter/Getter function of position
      * Fetch data by position
      *   - It automatically remove models that is outside of buffer range
      *   - It automatically load models inside of buffer range if it doesn't exist
@@ -146,10 +147,11 @@
      *
      * @param {Number|String}
      * @param {Object}
-     * @return {BufferCollection}
+     * @return {BufferCollection|Number}
      */
 
     position: function (position, options) {
+      if (typeof position === 'undefined') return this._pos;
       if (this._pos === position) return this;
       var cached, loaded, neighbor, toLoad, toUnload;
       this._pos = parseInt(position, 10);
@@ -228,12 +230,8 @@
     },
 
     /**
-     * position getter
-     * @return {Number}
      */
 
-    getPosition: function () {
-      return this._pos;
     },
 
     /**

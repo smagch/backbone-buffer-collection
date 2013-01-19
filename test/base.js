@@ -1,4 +1,4 @@
-describe('Backbone.StreamCollection', function () {
+describe('Backbone.BufferCollection', function () {
   var BufferCollection = Backbone.BufferCollection;
   var ColorCollection = BufferCollection.extend({
     url: function (position) {
@@ -9,15 +9,15 @@ describe('Backbone.StreamCollection', function () {
     }
   });
 
-  describe('.getPosition()', function () {
-    it('should update after `.position` call', function () {
+  describe('.position()', function () {
+    it('should be getter or setter based on its argument length', function () {
       var colorList = new ColorCollection();
       colorList.position(0);
-      expect(colorList.getPosition()).to.be(0);
+      expect(colorList.position()).to.be(0);
       colorList.position(2);
-      expect(colorList.getPosition()).to.be(2);
+      expect(colorList.position()).to.be(2);
       colorList.position(100);
-      expect(colorList.getPosition()).to.be(100);
+      expect(colorList.position()).to.be(100);
       colorList = colorList;
     });
   });
@@ -48,7 +48,7 @@ describe('Backbone.StreamCollection', function () {
   });
 
   describe('"drain" event', function () {
-    it('should trigger array of positions when all buffering completes', function (done) {
+    it('should trigger array of positions when all buffer loading completes', function (done) {
       function checkLength(num, positions) {
         if (!positions || !positions.length) return done(new Error('no position array'));
         expect(positions).to.have.length(num);
