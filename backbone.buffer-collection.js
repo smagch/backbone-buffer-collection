@@ -104,25 +104,24 @@
      * @return {BufferCollection}
      */
 
-    add: function (models, options) {
+    update: function (models, options) {
       var before, pos, after;
       pos = options && options.position;
       if (pos === undefined) {
-        return Collection.prototype.add.call(this, models, options);
+        return Collection.prototype.update.call(this, models, options);
       }
       delete this._pending[pos];
       // don't add models if requested position is no longer a neighbor
       if (this.isNeighbor(pos)) {
-        before = _.keys(this._byCid);
-        Collection.prototype.add.call(this, models, options);
-        after = _.keys(this._byCid);
+        before = _.keys(this._byId);
+        Collection.prototype.update.call(this, models, options);
+        after = _.keys(this._byId);
         this._byPosition[pos] = _.difference(after, before);
+        this.trigger('concat', this.getByPosition(pos), options);
       }
-      if (!_.keys(this._pending).length) {
-        this.trigger('drain', _.keys(this._byPosition));
+      if (_.keys(this._pending).length === 0) {
+        this.trigger('drain');
       }
-
-      this.trigger('concat', this.getByPosition(pos), options);
       return this;
     },
 
@@ -151,13 +150,13 @@
      */
 
     position: function (position, options) {
-      if (typeof position === 'undefined') return this._pos;
+      if (position === void 0) return this._pos;
       if (this._pos === position) return this;
       var cached, loaded, neighbor, toLoad, toUnload;
       this._pos = parseInt(position, 10);
       options || (options = {});
       // force add true
-      options.add = true;
+      options.update = true;
       cached = _.keys(this._byPosition);
       loaded = cached.concat(_.keys(this._pending));
       neighbor = this.getNeighbors();
@@ -194,7 +193,7 @@
       options || (options = {});
       options.position = position;
       options.url = this.url(position);
-      if (options.add === undefined) options.add = true;
+      if (options.update === undefined) options.update = true;
       return Collection.prototype.fetch.call(this, options).fail(function () {
         // TODO add retry option??
         delete pending[position];
@@ -226,16 +225,24 @@
     getByPosition: function (position) {
       var cids = this._byPosition[position];
       if (!cids) return null;
-      return _.map(cids, this.getByCid, this);
+      return _.map(cids, this.get, this);
     },
 
     /**
-     * return cached positions
+     * Setter/Getter of loaded positions
+     *   Getter - return cached positions
+     *   Setter - set position to current models
+     *
+     * @param {Number}
      * @return {Array} list of position
      */
 
-    loaded: function () {
-      return _.keys(this._byPosition);
+    loaded: function (position) {
+      if (position === void 0) {
+        return _.keys(this._byPosition);
+      }
+      this._byPosition[position] = _.keys(this._byId);
+      this.position(position);
     },
 
     /**
