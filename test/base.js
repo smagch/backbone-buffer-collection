@@ -92,7 +92,8 @@ describe('Backbone.BufferCollection', function () {
       colorList.position(0);
       colorList.reset();
       colorList.position(1);
-      colorList.on('drain', function (positions) {
+      colorList.on('drain', function () {
+        var positions = colorList.loaded();
         expect(positions).to.have.length(4);
         done();
       });
