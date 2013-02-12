@@ -156,7 +156,6 @@
       this._pos = parseInt(position, 10);
       options || (options = {});
       // force add true
-      options.update = true;
       cached = _.keys(this._byPosition);
       loaded = cached.concat(_.keys(this._pending));
       neighbor = this.getNeighbors();
@@ -193,7 +192,8 @@
       options || (options = {});
       options.position = position;
       options.url = this.url(position);
-      if (options.update === undefined) options.update = true;
+      options.update = true;
+      options.remove = false;
       return Collection.prototype.fetch.call(this, options).fail(function () {
         // TODO add retry option??
         delete pending[position];
